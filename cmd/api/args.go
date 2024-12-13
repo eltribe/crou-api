@@ -3,8 +3,8 @@ package main
 import "github.com/urfave/cli/v2"
 
 const (
-	Name    = "Pliper API"
-	Usage   = "Pliper API 서비스입니다"
+	Name    = "CROU API"
+	Usage   = "CROU API 서비스입니다"
 	Version = "1.0.0"
 )
 

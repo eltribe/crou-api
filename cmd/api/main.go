@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-// @title     Pliper API documentation
+// @title     CROU API documentation
 // @version   1.0.0
 // @BasePath  /
 func main() {
@@ -45,7 +45,6 @@ func Api() *cli.App {
 					httpserver.Api,
 				),
 			).Run()
-			// API
 			return nil
 		},
 	}
