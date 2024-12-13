@@ -2,6 +2,7 @@ package user
 
 import (
 	"crou-api/config/database"
+	"crou-api/internal/domains"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/valyala/fasthttp"
@@ -10,13 +11,13 @@ import (
 
 func TestGinkgo(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "UserService Suite")
+	RunSpecs(t, "UserUseCase Suite")
 
 }
 
-var _ = Describe("UserService 비즈니스 로직 테스트", func() {
+var _ = Describe("UserUseCase 비즈니스 로직 테스트", func() {
 	var (
-		userService *UserService
+		userService *UserUseCase
 		app         *fiber.App
 		ctx         *fiber.Ctx
 		fakedb      database.Persistent
@@ -27,7 +28,7 @@ var _ = Describe("UserService 비즈니스 로직 테스트", func() {
 		fileService := common.NewFileService(test.FakeConfig, fakedb)
 		myPromptService := NewMyPromptService(fakedb, jwtService, fileService, config.NewKopenAiGpt(test.FakeConfig))
 		notificationService := notification.NewNotificationService(fakedb, jwtService)
-		userService = NewUserService(fakedb, jwtService, myPromptService, notificationService)
+		userService = NewUserUseCase(fakedb, jwtService, myPromptService, notificationService)
 
 		app = fiber.New()
 		ctx = app.AcquireCtx(&fasthttp.RequestCtx{})

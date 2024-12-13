@@ -8,13 +8,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type UserService struct {
+type UserUseCase struct {
 	database   database.Persistent
 	jwtService *utils.JwtProvider
 }
 
-func NewUserService(database database.Persistent) *UserService {
-	return &UserService{
+func NewUserUseCase(database database.Persistent) *UserUseCase {
+	return &UserUseCase{
 		database: database,
 	}
 }
@@ -30,7 +30,7 @@ func NewUserService(database database.Persistent) *UserService {
 //	@Failure		401	{object}	server.Error
 //	@Failure		409	{object}	server.Error
 //	@Router			/v1/user/profile [get]
-func (svc *UserService) GetUser(c *fiber.Ctx) (*messages.User, error) {
+func (svc *UserUseCase) GetUser(c *fiber.Ctx) (*messages.User, error) {
 	claims := svc.jwtService.GetClaims(c)
 	user, err := svc.GetUserByOauthInfo(domains.OauthType(claims.Type), claims.Sub)
 	if err != nil {
@@ -46,7 +46,7 @@ func (svc *UserService) GetUser(c *fiber.Ctx) (*messages.User, error) {
 	}, nil
 }
 
-func (svc *UserService) GetUserByOauthInfo(oauthType domains.OauthType, oauthSub string) (*domains.User, error) {
+func (svc *UserUseCase) GetUserByOauthInfo(oauthType domains.OauthType, oauthSub string) (*domains.User, error) {
 	sql := svc.database.DB()
 	user := domains.User{}
 	result := sql.First(&user, "oauth_type = ? and oauth_sub = ?", oauthType, oauthSub)
@@ -56,7 +56,7 @@ func (svc *UserService) GetUserByOauthInfo(oauthType domains.OauthType, oauthSub
 	return &user, nil
 }
 
-func (svc *UserService) GetUserById(userId uint) (*domains.User, error) {
+func (svc *UserUseCase) GetUserById(userId uint) (*domains.User, error) {
 	sql := svc.database.DB()
 	user := domains.User{}
 	result := sql.First(&user, userId)
@@ -66,7 +66,7 @@ func (svc *UserService) GetUserById(userId uint) (*domains.User, error) {
 	return &user, nil
 }
 
-func (svc *UserService) createUser(newUser *domains.User) (*domains.User, error) {
+func (svc *UserUseCase) createUser(newUser *domains.User) (*domains.User, error) {
 	sql := svc.database.DB()
 	result := sql.Create(newUser)
 	if result.Error != nil {
@@ -75,7 +75,7 @@ func (svc *UserService) createUser(newUser *domains.User) (*domains.User, error)
 	return newUser, nil
 }
 
-func (svc *UserService) getUserByEmail(userEmail string) (*domains.User, error) {
+func (svc *UserUseCase) getUserByEmail(userEmail string) (*domains.User, error) {
 	sql := svc.database.DB()
 	user := domains.User{}
 	result := sql.First(&user, "email = ? ", userEmail)
@@ -85,7 +85,7 @@ func (svc *UserService) getUserByEmail(userEmail string) (*domains.User, error) 
 	return &user, nil
 }
 
-func (svc *UserService) getUserDetailByEmail(userEmail string) (*domains.UserDetail, error) {
+func (svc *UserUseCase) getUserDetailByEmail(userEmail string) (*domains.UserDetail, error) {
 	sql := svc.database.DB()
 	userDetail := domains.UserDetail{}
 	result := sql.First(&userDetail, "user_email = ? ", userEmail)
@@ -95,7 +95,7 @@ func (svc *UserService) getUserDetailByEmail(userEmail string) (*domains.UserDet
 	return &userDetail, nil
 }
 
-func (svc *UserService) updateUser(user *domains.User) error {
+func (svc *UserUseCase) updateUser(user *domains.User) error {
 	sql := svc.database.DB()
 	result := sql.Save(user)
 	if result.Error != nil {

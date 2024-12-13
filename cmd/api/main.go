@@ -3,6 +3,7 @@ package main
 import (
 	"crou-api/config"
 	"crou-api/config/database"
+	"crou-api/framework"
 	"crou-api/framework/httpserver"
 	app "crou-api/internal"
 	"github.com/urfave/cli/v2"
@@ -40,6 +41,7 @@ func Api() *cli.App {
 					config.NewOauth,
 				),
 				app.Ctx,
+				framework.Ctx,
 				fx.Invoke(
 					database.AutoMigration,
 					httpserver.Api,

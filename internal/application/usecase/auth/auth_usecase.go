@@ -2,9 +2,9 @@ package auth
 
 import (
 	"crou-api/config"
-	"crou-api/config/database"
 	"crou-api/errorcode"
 	"crou-api/internal/application/inputport"
+	"crou-api/internal/application/outputport"
 	"crou-api/internal/domains"
 	"crou-api/messages"
 	"crou-api/utils"
@@ -12,14 +12,14 @@ import (
 )
 
 type AuthUseCase struct {
-	database    database.Persistent
-	jwtProvider *utils.JwtProvider
+	jwtProvider        *utils.JwtProvider
+	userDataOutputPort outputport.UserDataOutputPort
 }
 
-func NewAuthUseCase(cnf *config.Config, database database.Persistent) inputport.AuthInputPort {
+func NewAuthUseCase(cnf *config.Config, userDataOutputPort outputport.UserDataOutputPort) inputport.AuthInputPort {
 	return &AuthUseCase{
-		database:    database,
-		jwtProvider: utils.NewJwtService(cnf),
+		userDataOutputPort: userDataOutputPort,
+		jwtProvider:        utils.NewJwtService(cnf),
 	}
 }
 
@@ -33,7 +33,7 @@ func NewAuthUseCase(cnf *config.Config, database database.Persistent) inputport.
 // @Failure		409	{object}	server.Error
 // @Router			/v1/auth/login [post]
 func (svc *AuthUseCase) LoginUser(c *fiber.Ctx, req *messages.LoginRequest) (*messages.LoginResponse, error) {
-	user, err := svc.getUserByEmail(req.Email)
+	user, err := svc.userDataOutputPort.GetUserByEmail(req.Email)
 	if err != nil {
 		return nil, errorcode.ErrInvalidEmailOrPassword
 	}
@@ -53,7 +53,7 @@ func (svc *AuthUseCase) LoginUser(c *fiber.Ctx, req *messages.LoginRequest) (*me
 }
 
 func (svc *AuthUseCase) RegisterUser(c *fiber.Ctx, req *messages.RegisterUserRequest) (*messages.RegisterUserResponse, error) {
-	_, err := svc.getUserByEmail(req.Email)
+	_, err := svc.userDataOutputPort.GetUserByEmail(req.Email)
 	if err == nil {
 		return nil, errorcode.ErrAlreadyUser
 	}
@@ -69,7 +69,7 @@ func (svc *AuthUseCase) RegisterUser(c *fiber.Ctx, req *messages.RegisterUserReq
 		Gender:   req.Gender,
 		Birth:    req.Birth,
 	}
-	_, err = svc.createUser(newUser)
+	_, err = svc.userDataOutputPort.CreateUser(newUser)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusConflict, err.Error())
 	}
@@ -81,23 +81,4 @@ func (svc *AuthUseCase) RegisterUser(c *fiber.Ctx, req *messages.RegisterUserReq
 		Birth:    newUser.Birth,
 		Email:    newUser.Email,
 	}, nil
-}
-
-func (svc *AuthUseCase) getUserByEmail(userEmail string) (*domains.User, error) {
-	sql := svc.database.DB()
-	user := domains.User{}
-	result := sql.First(&user, "email = ? ", userEmail)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &user, nil
-}
-
-func (svc *AuthUseCase) createUser(newUser *domains.User) (*domains.User, error) {
-	sql := svc.database.DB()
-	result := sql.Create(newUser)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return newUser, nil
 }

@@ -24,11 +24,11 @@ type OAuth2Service struct {
 	database    database.Persistent
 	config      *config.Config
 	auth        *config.OAuth
-	userService *user.UserService
+	userService *user.UserUseCase
 	jwtProvider *utils.JwtProvider
 }
 
-func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *config.Config, userService *user.UserService) *OAuth2Service {
+func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *config.Config, userService *user.UserUseCase) *OAuth2Service {
 	return &OAuth2Service{
 		database:    database,
 		auth:        auth,
