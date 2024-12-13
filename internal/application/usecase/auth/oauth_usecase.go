@@ -4,7 +4,7 @@ import (
 	"context"
 	"crou-api/config"
 	"crou-api/config/database"
-	"crou-api/internal/application/user"
+	"crou-api/internal/application/usecase/user"
 	"crou-api/internal/domains"
 	messages2 "crou-api/messages"
 	"crou-api/utils"
@@ -20,7 +20,7 @@ var store = session.New(session.Config{
 	Expiration: time.Second * 180,
 })
 
-type AuthService struct {
+type OAuth2Service struct {
 	database    database.Persistent
 	config      *config.Config
 	auth        *config.OAuth
@@ -28,8 +28,8 @@ type AuthService struct {
 	jwtProvider *utils.JwtProvider
 }
 
-func NewAuthService(database database.Persistent, auth *config.OAuth, config *config.Config, userService *user.UserService) *AuthService {
-	return &AuthService{
+func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *config.Config, userService *user.UserService) *OAuth2Service {
+	return &OAuth2Service{
 		database:    database,
 		auth:        auth,
 		config:      config,
@@ -49,7 +49,7 @@ func NewAuthService(database database.Persistent, auth *config.OAuth, config *co
 //	@Success		200							{object}	messages.OauthLoginUrl
 //	@Failure		409							{object}	server.Error
 //	@Router			/v1/auth/google [get]
-func (srv *AuthService) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
+func (srv *OAuth2Service) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
 	state := utils.RandToken(5)
 	//sess, err := store.Get(c)
 	//if err != nil {
@@ -80,7 +80,7 @@ func (srv *AuthService) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLogin
 //	@Success		200							{object}	messages.OauthLoginUrl
 //	@Failure		409							{object}	server.Error
 //	@Router			/v1/auth/naver [get]
-func (srv *AuthService) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
+func (srv *OAuth2Service) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
 	state := utils.RandToken(5)
 	//sess, err := store.Get(c)
 	//if err != nil {
@@ -109,10 +109,10 @@ func (srv *AuthService) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLoginR
 //	@Produce		json
 //	@Param			code	query		string	true	"code"
 //	@Param			state	query		string	false	"state"
-//	@Success		200		{object}	messages.AuthResult
+//	@Success		200		{object}	messages.AccessToken
 //	@Failure		409		{object}	server.Error
 //	@Router			/v1/auth/google/callback [get]
-func (srv *AuthService) OauthGoogleCallback(c *fiber.Ctx, code string, state string) (*messages2.AuthResult, error) {
+func (srv *OAuth2Service) OauthGoogleCallback(c *fiber.Ctx, code string, state string) (*messages2.AccessToken, error) {
 
 	//sess, _ := store.Get(c)
 	//storedState := sess.Get(config.AUTH_STATE_KEY)
@@ -155,7 +155,7 @@ func (srv *AuthService) OauthGoogleCallback(c *fiber.Ctx, code string, state str
 		return nil, fiber.NewError(fiber.StatusPaymentRequired, jwtToken.Token)
 	}
 	// 성공시 JWT 재할당
-	jwtToken, err := srv.jwtProvider.GenerateJwt(domains.GOOGLE, googleUser.Sub, googleUser.Email, userInfo2.Nickname)
+	jwtToken, err := srv.jwtProvider.GenerateOauthJwt(domains.GOOGLE, googleUser.Sub, googleUser.Email, userInfo2.Nickname)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
@@ -173,10 +173,10 @@ func (srv *AuthService) OauthGoogleCallback(c *fiber.Ctx, code string, state str
 //	@Produce		json
 //	@Param			code	query		string	true	"code"
 //	@Param			state	query		string	false	"state"
-//	@Success		200		{object}	messages.AuthResult
+//	@Success		200		{object}	messages.AccessToken
 //	@Failure		409		{object}	server.Error
 //	@Router			/v1/auth/naver/callback [get]
-func (srv *AuthService) OauthNaverCallback(c *fiber.Ctx, code string, state string) (*messages2.AuthResult, error) {
+func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state string) (*messages2.AccessToken, error) {
 
 	//sess, _ := store.Get(c)
 	//storedState := sess.Get(config.AUTH_STATE_KEY)
@@ -221,7 +221,7 @@ func (srv *AuthService) OauthNaverCallback(c *fiber.Ctx, code string, state stri
 		return nil, fiber.NewError(fiber.StatusPaymentRequired, jwtToken.Token)
 	}
 
-	jwtToken, err := srv.jwtProvider.GenerateJwt(domains.NAVER, naverUser.Response.ID, naverUser.Response.Email, userInfo2.Nickname)
+	jwtToken, err := srv.jwtProvider.GenerateOauthJwt(domains.NAVER, naverUser.Response.ID, naverUser.Response.Email, userInfo2.Nickname)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
@@ -237,30 +237,30 @@ func (srv *AuthService) OauthNaverCallback(c *fiber.Ctx, code string, state stri
 //	@Accept			json
 //	@Produce		json
 //	@Param			messages.JoinRequest	body		messages.JoinRequest	true	"JoinRequest"
-//	@Success		200						{object}	messages.AuthResult
+//	@Success		200						{object}	messages.AccessToken
 //	@Failure		401						{object}	server.Error
 //	@Failure		409						{object}	server.Error
 //	@Router			/v1/join [post]
-func (srv *AuthService) Join(c *fiber.Ctx, input *messages2.JoinRequest) (*messages2.AuthResult, error) {
-	jwtClaims := srv.jwtProvider.GetClaims(c)
-	newUser := &domains.User{
-		Nickname:   input.Nickname,
-		OauthType:  domains.ParseOauthType(jwtClaims.Type),
-		OauthSub:   jwtClaims.Sub,
-		OauthEmail: jwtClaims.Email,
-	}
-	_, err := srv.userService.CreateUser(newUser)
-	if err != nil {
-		return nil, fiber.NewError(fiber.StatusConflict, err.Error())
-	}
-	// JWT 생성
-	jwtToken, err := srv.jwtProvider.GenerateJwt(domains.GOOGLE, newUser.OauthSub, newUser.OauthEmail, newUser.Nickname)
-	srv.saveRefreshToken(jwtToken.RefreshToken, newUser.ID)
-	if err != nil {
-		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
-	}
-	return jwtToken, nil
-}
+//func (srv *OAuth2Service) Join(c *fiber.Ctx, input *messages2.JoinRequest) (*messages2.AccessToken, error) {
+//	jwtClaims := srv.jwtProvider.GetClaims(c)
+//	newUser := &domains.User{
+//		Nickname:   input.Nickname,
+//		OauthType:  domains.ParseOauthType(jwtClaims.Type),
+//		OauthSub:   &jwtClaims.Sub,
+//		OauthEmail: &jwtClaims.Email,
+//	}
+//	_, err := srv.userService.CreateUser(newUser)
+//	if err != nil {
+//		return nil, fiber.NewError(fiber.StatusConflict, err.Error())
+//	}
+//	// JWT 생성
+//	jwtToken, err := srv.jwtProvider.GenerateOauthJwt(domains.GOOGLE, *newUser.OauthSub, *newUser.OauthEmail, newUser.Nickname)
+//	srv.saveRefreshToken(jwtToken.RefreshToken, newUser.ID)
+//	if err != nil {
+//		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
+//	}
+//	return jwtToken, nil
+//}
 
 // Refresh godoc
 //
@@ -270,11 +270,11 @@ func (srv *AuthService) Join(c *fiber.Ctx, input *messages2.JoinRequest) (*messa
 //	@Accept			json
 //	@Produce		json
 //	@Param			messages.RefreshTokenRequest	body		messages.RefreshTokenRequest	true	"RefreshTokenRequest"
-//	@Success		200						{object}	messages.AuthResult
+//	@Success		200						{object}	messages.AccessToken
 //	@Failure		401						{object}	server.Error
 //	@Failure		409						{object}	server.Error
 //	@Router			/v1/auth/refresh [post]
-func (srv *AuthService) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenRequest) (*messages2.AuthResult, error) {
+func (srv *OAuth2Service) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenRequest) (*messages2.AccessToken, error) {
 
 	if err := utils.VerifyPassword(input.RefreshToken, srv.config.Auth.JWT.Secret); err != nil {
 		log.Info(`올바르지 않는 Refresh Token입니다.`, err)
@@ -292,7 +292,7 @@ func (srv *AuthService) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenReque
 
 	// JWT 생성
 	srv.removeRefreshToken(input.RefreshToken)
-	jwtToken, err := srv.jwtProvider.GenerateJwt(userInfo.OauthType, userInfo.OauthSub, userInfo.OauthEmail, userInfo.Nickname)
+	jwtToken, err := srv.jwtProvider.GenerateOauthJwt(userInfo.OauthType, *userInfo.OauthSub, *userInfo.OauthEmail, userInfo.Nickname)
 	srv.saveRefreshToken(jwtToken.RefreshToken, userInfo.ID)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
@@ -301,14 +301,14 @@ func (srv *AuthService) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenReque
 	return jwtToken, nil
 }
 
-func (srv *AuthService) saveRefreshToken(refreshToken string, userId uint) {
+func (srv *OAuth2Service) saveRefreshToken(refreshToken string, userId uint) {
 	srv.database.REDIS().Set(context.Background(), "refreshtoken:"+refreshToken, utils.UintToString(uint64(userId)), time.Hour*time.Duration(srv.config.Auth.JWT.RefreshTokenExpiresHours))
 }
 
-func (srv *AuthService) getRefreshToken(refreshToken string) (string, error) {
+func (srv *OAuth2Service) getRefreshToken(refreshToken string) (string, error) {
 	return srv.database.REDIS().Get(context.Background(), "refreshtoken:"+refreshToken).Result()
 }
 
-func (srv *AuthService) removeRefreshToken(refreshToken string) {
+func (srv *OAuth2Service) removeRefreshToken(refreshToken string) {
 	srv.database.REDIS().Del(context.Background(), "refreshtoken:"+refreshToken)
 }

@@ -41,9 +41,8 @@ func (svc *UserService) GetUser(c *fiber.Ctx) (*messages.User, error) {
 		UserID:     user.ID,
 		Nickname:   user.Nickname,
 		OauthType:  user.OauthType,
-		OauthSub:   user.OauthSub,
-		OauthEmail: user.OauthEmail,
-		Taste:      user.Taste,
+		OauthSub:   *user.OauthSub,
+		OauthEmail: *user.OauthEmail,
 	}, nil
 }
 
@@ -67,7 +66,7 @@ func (svc *UserService) GetUserById(userId uint) (*domains.User, error) {
 	return &user, nil
 }
 
-func (svc *UserService) CreateUser(newUser *domains.User) (*domains.User, error) {
+func (svc *UserService) createUser(newUser *domains.User) (*domains.User, error) {
 	sql := svc.database.DB()
 	result := sql.Create(newUser)
 	if result.Error != nil {
@@ -76,10 +75,20 @@ func (svc *UserService) CreateUser(newUser *domains.User) (*domains.User, error)
 	return newUser, nil
 }
 
+func (svc *UserService) getUserByEmail(userEmail string) (*domains.User, error) {
+	sql := svc.database.DB()
+	user := domains.User{}
+	result := sql.First(&user, "email = ? ", userEmail)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
 func (svc *UserService) getUserDetailByEmail(userEmail string) (*domains.UserDetail, error) {
 	sql := svc.database.DB()
 	userDetail := domains.UserDetail{}
-	result := sql.Joins("User").First(&userDetail, "user_email = ? ", userEmail)
+	result := sql.First(&userDetail, "user_email = ? ", userEmail)
 	if result.Error != nil {
 		return nil, result.Error
 	}

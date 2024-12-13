@@ -22,7 +22,7 @@ func GetAccessUser(svc *JwtProvider, c *fiber.Ctx) *messages.JwtClaims {
 	return claims
 }
 
-func (srv *JwtProvider) GenerateTemporaryJwt(oauthType domains.OauthType, sub, email string) (*messages.AuthResult, error) {
+func (srv *JwtProvider) GenerateTemporaryJwt(oauthType domains.OauthType, sub, email string) (*messages.AccessToken, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	expires := time.Now().Add(time.Hour * time.Duration(srv.config.ExpiresHours)).Unix()
 
@@ -37,22 +37,26 @@ func (srv *JwtProvider) GenerateTemporaryJwt(oauthType domains.OauthType, sub, e
 	if err != nil {
 		return nil, err
 	}
-	return &messages.AuthResult{
+	return &messages.AccessToken{
 		Token:     tokenString,
 		ExpiresIn: expires,
 	}, nil
 }
 
-func (srv *JwtProvider) GenerateJwt(oauthType domains.OauthType, sub, email string, nickname string) (*messages.AuthResult, error) {
+func (srv *JwtProvider) GenerateJwt(oauthType *domains.OauthType, email, nickname string) (*messages.AccessToken, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	expires := time.Now().Add(time.Hour * time.Duration(srv.config.ExpiresHours)).Unix()
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims["type"] = oauthType
-	claims["sub"] = sub
+
+	if oauthType == nil {
+		claims["oauth"] = "X"
+	} else {
+		claims["oauth"] = *oauthType
+	}
+	//claims["sub"] = sub
 	claims["email"] = email
 	claims["nickname"] = nickname
-	claims["approve"] = true
 	claims["exp"] = expires
 
 	tokenString, err := token.SignedString([]byte(srv.config.Secret))
@@ -67,7 +71,39 @@ func (srv *JwtProvider) GenerateJwt(oauthType domains.OauthType, sub, email stri
 		return nil, err
 	}
 
-	return &messages.AuthResult{
+	return &messages.AccessToken{
+		Token:                 tokenString,
+		ExpiresIn:             expires,
+		RefreshToken:          refreshTokenString,
+		RefreshTokenExpiresIn: refreshTokenExpires,
+	}, nil
+}
+
+func (srv *JwtProvider) GenerateOauthJwt(oauthType domains.OauthType, sub, email string, nickname string) (*messages.AccessToken, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	expires := time.Now().Add(time.Hour * time.Duration(srv.config.ExpiresHours)).Unix()
+
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["type"] = oauthType
+	claims["sub"] = sub
+	claims["email"] = email
+	claims["nickname"] = nickname
+	claims["exp"] = expires
+
+	tokenString, err := token.SignedString([]byte(srv.config.Secret))
+	if err != nil {
+		return nil, err
+	}
+
+	// refresh token
+	refreshTokenExpires := time.Now().Add(time.Hour * time.Duration(srv.config.RefreshTokenExpiresHours)).Unix()
+	refreshTokenString, err := Hash(srv.config.Secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &messages.AccessToken{
 		Token:                 tokenString,
 		ExpiresIn:             expires,
 		RefreshToken:          refreshTokenString,

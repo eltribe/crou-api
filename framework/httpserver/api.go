@@ -21,7 +21,7 @@ const LOG_FORMAT = "[${time}] ${ip} - ${status} ${method} ${path} ${queryParams}
 func Api(
 	lc fx.Lifecycle,
 	conf *config.Config,
-	stx *app.ServiceContext,
+	stx *app.InputPortProvider,
 ) *fiber.App {
 
 	app := fiber.New(fiber.Config{

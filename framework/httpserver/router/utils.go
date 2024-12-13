@@ -1,6 +1,8 @@
 package router
 
 import (
+	"crou-api/errorcode"
+	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -45,6 +47,10 @@ func queryValidator[T any](c *fiber.Ctx, req *T) error {
 // 공통 응답
 func response(c *fiber.Ctx, response interface{}, err error) error {
 	if err != nil {
+		var useCaseError *errorcode.UseCaseError
+		if errors.As(err, &useCaseError) {
+			return c.Status(useCaseError.Code).JSON(useCaseError)
+		}
 		return err
 	}
 	return c.JSON(response)

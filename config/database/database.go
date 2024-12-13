@@ -7,6 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gLogger "gorm.io/gorm/logger"
@@ -119,23 +120,37 @@ func AutoMigration(db Persistent) {
 }
 
 func dialector(conf config.DatabaseConfig) gorm.Dialector {
+	log.Println(conf.Type)
 	if conf.Type == "sqlite" {
 		return sqlite.Open("sqlite.db")
+	} else if conf.Type == "mysql" {
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			conf.User,
+			conf.Password,
+			conf.Host,
+			conf.Port,
+			conf.Database,
+		)
+		return mysql.New(mysql.Config{
+			DriverName:                "mysql",
+			DSN:                       dsn,
+			SkipInitializeWithVersion: false,
+			DefaultStringSize:         255,  // change it if needed
+			DisableDatetimePrecision:  true, // true, because datetime precision requires MySQL 5.6
+			DontSupportRenameIndex:    true,
+			DontSupportRenameColumn:   true,
+		})
+	} else if conf.Type == "postgres" {
+		dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=require TimeZone=Asia/Seoul",
+			conf.Host,
+			conf.Port,
+			conf.User,
+			conf.Database,
+			conf.Password,
+		)
+		return postgres.Open(dsn)
+	} else {
+		log.Fatal("Database type not found")
+		return nil
 	}
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		conf.User,
-		conf.Password,
-		conf.Host,
-		conf.Port,
-		conf.Database,
-	)
-	return mysql.New(mysql.Config{
-		DriverName:                "mysql",
-		DSN:                       dsn,
-		SkipInitializeWithVersion: false,
-		DefaultStringSize:         255,  // change it if needed
-		DisableDatetimePrecision:  true, // true, because datetime precision requires MySQL 5.6
-		DontSupportRenameIndex:    true,
-		DontSupportRenameColumn:   true,
-	})
 }

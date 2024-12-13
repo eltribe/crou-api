@@ -1,44 +1,41 @@
 package domains
 
-import "gorm.io/gorm"
-
-type OauthType string
-
-const (
-	GOOGLE OauthType = "GOOGLE"
-	NAVER  OauthType = "NAVER"
+import (
+	"gorm.io/gorm"
+	"time"
 )
-
-func (t OauthType) String() string {
-	return string(t)
-}
-
-func ParseOauthType(t string) OauthType {
-	return OauthType(t)
-}
 
 type User struct {
 	gorm.Model
-	Nickname   string
-	OauthType  OauthType `gorm:"uniqueIndex:oauth_type_sub_idx"`
-	OauthSub   string    `gorm:"uniqueIndex:oauth_type_sub_idx"`
-	OauthEmail string    `gorm:"unique"`
-	Taste      string
+	Email        string `gorm:"unique;size:100"`
+	Nickname     string `gorm:"size:20"`
+	Password     string `gorm:"size:100"`
+	Gender       string `gorm:"size:1"` // 성별 (M: 남성, F: 여성)
+	Birth        int32  // 생년월일 (YYYYMMDD)
+	ProfileImage *string
+	OauthType    OauthType `gorm:"uniqueIndex:oauth_type_sub_idx;size:10"`
+	OauthSub     *string   `gorm:"uniqueIndex:oauth_type_sub_idx;size:100"`
+	OauthEmail   *string   `gorm:"unique;size:100"`
 }
 
 type UserDetail struct {
-	gorm.Model
-	UserEmail        string `gorm:"index"`
-	LikeCount        uint   // 좋아요 개수
-	ClipCount        uint   // 클립 개수
-	PrecisionUpCount uint   // 정확도 Up
-	User             User   `gorm:"foreignKey:UserEmail;references:OauthEmail"`
+	UserId    uint `gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserNotificationSetting
+
+	User User `gorm:"foreignKey:UserId;references:ID"`
 }
 
-type RefreshToken struct {
-	Nickname   string
-	OauthType  OauthType `gorm:"uniqueIndex:oauth_type_sub_idx"`
-	OauthSub   string    `gorm:"uniqueIndex:oauth_type_sub_idx"`
-	OauthEmail string    `gorm:"unique"`
-	Taste      string
+type UserNotificationSetting struct {
+	// 오전 알림
+	MorningAppPush bool `gorm:"default:true"`
+	// 저녁 알림
+	EveningAppPush bool `gorm:"default:true"`
+	// 주말 알림
+	WeekendAppPush bool `gorm:"default:true"`
+	// 마케팅, 혜택 알림
+	MarketingAppPush bool `gorm:"default:true"`
+	// 마케팅, 혜택 앱푸시 수정 날짜
+	MarketingAppPushUpdatedAt time.Time
 }

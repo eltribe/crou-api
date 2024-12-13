@@ -32,7 +32,7 @@ var defaultErrorHandler = func(c *fiber.Ctx, err error) error {
 		code = fiber.StatusBadRequest
 		validErr := &ValidError{
 			Error: Error{
-				Message: "잘못된 요청값입니다.",
+				Message: "잘못된 요청값입니다. 확인해주세요.",
 				Code:    code,
 			},
 			Fields: make(map[string]string),
@@ -40,6 +40,7 @@ var defaultErrorHandler = func(c *fiber.Ctx, err error) error {
 
 		for _, fieldErr := range ee {
 			field := fieldErr.Field()
+			fieldErr.Error()
 			field = strings.ToLower(field[:1]) + field[1:]
 			validErr.Fields[field] = fieldErr.Tag()
 		}

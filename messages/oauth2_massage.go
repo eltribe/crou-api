@@ -41,10 +41,3 @@ type NaverOauthUserInfo struct {
 		Mobile       string `json:"mobile"`
 	} `json:"response"`
 }
-
-type AuthResult struct {
-	Token                 string `json:"token"`
-	ExpiresIn             int64  `json:"expiresIn"`
-	RefreshToken          string `json:"refreshToken"`
-	RefreshTokenExpiresIn int64  `json:"refreshTokenExpiresIn"`
-}

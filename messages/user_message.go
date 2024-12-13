@@ -17,7 +17,3 @@ type User struct {
 	Taste             string            `json:"taste"`
 	NotificationCount uint              `json:"notificationCount,omitempty"`
 }
-
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
-}
