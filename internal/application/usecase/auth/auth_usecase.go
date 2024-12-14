@@ -19,7 +19,7 @@ type AuthUseCase struct {
 func NewAuthUseCase(cnf *config.Config, userDataOutputPort outputport.UserDataOutputPort) inputport.AuthInputPort {
 	return &AuthUseCase{
 		userDataOutputPort: userDataOutputPort,
-		jwtProvider:        utils.NewJwtService(cnf),
+		jwtProvider:        utils.NewJwtProvider(cnf),
 	}
 }
 
@@ -42,7 +42,7 @@ func (svc *AuthUseCase) LoginUser(c *fiber.Ctx, req *messages.LoginRequest) (*me
 		return nil, errorcode.ErrInvalidEmailOrPassword
 	}
 
-	token, err := svc.jwtProvider.GenerateJwt(nil, user.Email, user.Nickname)
+	token, err := svc.jwtProvider.GenerateJwt(user.ID.String(), user.Email, user.Nickname, nil)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

@@ -2,6 +2,7 @@ package messages
 
 import (
 	"crou-api/internal/domains"
+	"github.com/google/uuid"
 )
 
 type JoinRequest struct {
@@ -9,7 +10,7 @@ type JoinRequest struct {
 }
 
 type User struct {
-	UserID            uint              `json:"userID"`
+	UserID            uuid.UUID         `json:"userID"`
 	Nickname          string            `json:"nickname"`
 	OauthType         domains.OauthType `json:"oauthType"`
 	OauthSub          string            `json:"oauthSub"`

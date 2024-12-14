@@ -1,5 +1,7 @@
 package messages
 
+import "github.com/google/uuid"
+
 type RegisterUserRequest struct {
 	Email    string `json:"email" validate:"required,email,max=100"`
 	Password string `json:"password" validate:"required,min=8,max=100"`
@@ -9,11 +11,11 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	UserID   uint   `json:"userId"`
-	Nickname string `json:"nickname"`
-	Gender   string `json:"gender"`
-	Birth    int32  `json:"birth"`
-	Email    string `json:"email"`
+	UserID   uuid.UUID `json:"userId"`
+	Nickname string    `json:"nickname"`
+	Gender   string    `json:"gender"`
+	Birth    int32     `json:"birth"`
+	Email    string    `json:"email"`
 }
 
 type LoginRequest struct {

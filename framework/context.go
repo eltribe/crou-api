@@ -8,5 +8,6 @@ import (
 var Ctx = fx.Module("framework",
 	fx.Provide(
 		gormadapter.NewUserGorm,
+		gormadapter.NewRoutineGorm,
 	),
 )

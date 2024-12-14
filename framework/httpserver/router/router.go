@@ -6,6 +6,7 @@ import (
 	app "crou-api/internal"
 	"crou-api/messages"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 const (
@@ -22,12 +23,12 @@ func Route(
 	stx *app.InputPortProvider,
 ) {
 
-	noauthGroup := api.Group(V1)
-	noauthGroup.Get("/ping", func(c *fiber.Ctx) error {
+	noauth := api.Group(V1)
+	noauth.Get("/ping", func(c *fiber.Ctx) error {
 		return c.SendString("pong")
 	})
 
-	noauthGroup.Get("/oauth2/google", func(c *fiber.Ctx) error {
+	noauth.Get("/oauth2/google", func(c *fiber.Ctx) error {
 		req := messages.OauthLoginRequest{}
 		if err := queryValidator(c, &req); err != nil {
 			return err
@@ -35,12 +36,12 @@ func Route(
 		result, err := stx.OAuth2UseCase.OauthGoogleLogin(c, &req)
 		return response(c, result, err)
 	})
-	noauthGroup.Get("/oauth2/google/callback", func(c *fiber.Ctx) error {
+	noauth.Get("/oauth2/google/callback", func(c *fiber.Ctx) error {
 		result, err := stx.OAuth2UseCase.OauthGoogleCallback(c, c.Query("code"), c.Query("state"))
 		return response(c, result, err)
 	})
 
-	noauthGroup.Get("/oauth2/naver", func(c *fiber.Ctx) error {
+	noauth.Get("/oauth2/naver", func(c *fiber.Ctx) error {
 		req := messages.OauthLoginRequest{}
 		if err := queryValidator(c, &req); err != nil {
 			return err
@@ -49,12 +50,12 @@ func Route(
 		return response(c, result, err)
 	})
 
-	noauthGroup.Get("/oauth2/naver/callback", func(c *fiber.Ctx) error {
+	noauth.Get("/oauth2/naver/callback", func(c *fiber.Ctx) error {
 		result, err := stx.OAuth2UseCase.OauthNaverCallback(c, c.Query("code"), c.Query("state"))
 		return response(c, result, err)
 	})
 
-	noauthGroup.Post("/oauth2/refresh", func(c *fiber.Ctx) error {
+	noauth.Post("/oauth2/refresh", func(c *fiber.Ctx) error {
 		req := messages.RefreshTokenRequest{}
 		if err := bodyValidator(c, &req); err != nil {
 			return err
@@ -63,29 +64,58 @@ func Route(
 		return response(c, result, err)
 	})
 
-	noauthGroup.Post("/auth/join", func(c *fiber.Ctx) error {
+	noauth.Post("/auth/join", func(c *fiber.Ctx) error {
 		req := messages.RegisterUserRequest{}
 		if err := bodyValidator(c, &req); err != nil {
 			return err
 		}
-		result, err := stx.AuthUseCase.RegisterUser(c, &req)
+		result, err := stx.AuthInputPort.RegisterUser(c, &req)
 		return response(c, result, err)
 	})
 
-	noauthGroup.Post("/auth/login", func(c *fiber.Ctx) error {
+	noauth.Post("/auth/login", func(c *fiber.Ctx) error {
 		req := messages.LoginRequest{}
 		if err := bodyValidator(c, &req); err != nil {
 			return err
 		}
-		result, err := stx.AuthUseCase.LoginUser(c, &req)
+		result, err := stx.AuthInputPort.LoginUser(c, &req)
 		return response(c, result, err)
 	})
 
 	// ================== Auth Group ==================
 
-	authGroup := api.Group(V1, middleware.JwtMiddleware(conf))
-	authGroup.Get("/user/profile", func(c *fiber.Ctx) error {
+	auth := api.Group(V1, middleware.JwtMiddleware(conf))
+	auth.Get("/user/profile", func(c *fiber.Ctx) error {
 		result, err := stx.UserService.GetUser(c)
 		return response(c, result, err)
+	})
+
+	auth.Post("/routine", func(c *fiber.Ctx) error {
+		req := messages.CreateRoutineRequest{}
+		if err := bodyValidator(c, &req); err != nil {
+			return err
+		}
+		result, err := stx.RoutineInputPort.CreateRoutine(c, req)
+		return response(c, result, err)
+	})
+
+	auth.Get("/routine", func(c *fiber.Ctx) error {
+		result, err := stx.RoutineInputPort.GetRoutines(c)
+		return response(c, result, err)
+	})
+
+	auth.Put("/routine", func(c *fiber.Ctx) error {
+		req := messages.UpdateRoutineRequest{}
+		if err := bodyValidator(c, &req); err != nil {
+			return err
+		}
+		result, err := stx.RoutineInputPort.UpdateRoutine(c, req)
+		return response(c, result, err)
+	})
+
+	auth.Delete("/routine/:routineId", func(c *fiber.Ctx) error {
+		routineId := c.Params("routineId")
+		err := stx.RoutineInputPort.DeleteRoutine(c, uuid.MustParse(routineId))
+		return response(c, nil, err)
 	})
 }

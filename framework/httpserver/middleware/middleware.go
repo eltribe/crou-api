@@ -32,17 +32,14 @@ func JwtMiddleware(cnf *config.Config) fiber.Handler {
 
 		// Validate the token and return the custom claims
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// do something with claims
 			c.Set("email", claims["email"].(string))
-			c.Set("type", claims["type"].(string))
 			c.Set("sub", claims["sub"].(string))
+			c.Set("nickname", claims["nickname"].(string))
 			c.Locals("claims", claims)
-			_ = claims
 		} else {
 			return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 		}
 
-		// Continue stack, if not valid it will return above
 		return c.Next()
 	}
 }

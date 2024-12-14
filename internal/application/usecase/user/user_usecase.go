@@ -9,8 +9,8 @@ import (
 )
 
 type UserUseCase struct {
-	database   database.Persistent
-	jwtService *utils.JwtProvider
+	database    database.Persistent
+	jwtProvider *utils.JwtProvider
 }
 
 func NewUserUseCase(database database.Persistent) *UserUseCase {
@@ -31,7 +31,7 @@ func NewUserUseCase(database database.Persistent) *UserUseCase {
 //	@Failure		409	{object}	server.Error
 //	@Router			/v1/user/profile [get]
 func (svc *UserUseCase) GetUser(c *fiber.Ctx) (*messages.User, error) {
-	claims := svc.jwtService.GetClaims(c)
+	claims := svc.jwtProvider.GetClaims(c)
 	user, err := svc.GetUserByOauthInfo(domains.OauthType(claims.Type), claims.Sub)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusConflict, err.Error())

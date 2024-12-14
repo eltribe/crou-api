@@ -16,7 +16,7 @@ func ParseOauthType(t string) OauthType {
 }
 
 type RefreshToken struct {
-	OauthType  OauthType `gormadapter:"uniqueIndex:oauth_type_sub_idx"`
-	OauthSub   string    `gormadapter:"uniqueIndex:oauth_type_sub_idx"`
-	OauthEmail string    `gormadapter:"unique"`
+	OauthType  OauthType `gorm:"uniqueIndex:oauth_type_sub_idx"`
+	OauthSub   string    `gorm:"uniqueIndex:oauth_type_sub_idx"`
+	OauthEmail string    `gorm:"unique"`
 }

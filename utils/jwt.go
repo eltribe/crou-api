@@ -13,7 +13,7 @@ type JwtProvider struct {
 	config *config.JWTConfig
 }
 
-func NewJwtService(config *config.Config) *JwtProvider {
+func NewJwtProvider(config *config.Config) *JwtProvider {
 	return &JwtProvider{config: &config.Auth.JWT}
 }
 
@@ -43,7 +43,7 @@ func (srv *JwtProvider) GenerateTemporaryJwt(oauthType domains.OauthType, sub, e
 	}, nil
 }
 
-func (srv *JwtProvider) GenerateJwt(oauthType *domains.OauthType, email, nickname string) (*messages.AccessToken, error) {
+func (srv *JwtProvider) GenerateJwt(sub, email, nickname string, oauthType *domains.OauthType) (*messages.AccessToken, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	expires := time.Now().Add(time.Hour * time.Duration(srv.config.ExpiresHours)).Unix()
 
@@ -54,7 +54,7 @@ func (srv *JwtProvider) GenerateJwt(oauthType *domains.OauthType, email, nicknam
 	} else {
 		claims["oauth"] = *oauthType
 	}
-	//claims["sub"] = sub
+	claims["sub"] = sub
 	claims["email"] = email
 	claims["nickname"] = nickname
 	claims["exp"] = expires
@@ -119,7 +119,6 @@ func (srv *JwtProvider) GetClaims(c *fiber.Ctx) *messages.JwtClaims {
 
 	return &messages.JwtClaims{
 		Sub:      claims["sub"].(string),
-		Type:     claims["type"].(string),
 		Email:    claims["email"].(string),
 		Nickname: claims["nickname"].(string),
 	}

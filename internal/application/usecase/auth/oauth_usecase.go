@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/google/uuid"
 	"io"
 	"time"
 )
@@ -34,7 +35,7 @@ func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *
 		auth:        auth,
 		config:      config,
 		userService: userService,
-		jwtProvider: utils.NewJwtService(config),
+		jwtProvider: utils.NewJwtProvider(config),
 	}
 }
 
@@ -145,7 +146,7 @@ func (srv *OAuth2Service) OauthGoogleCallback(c *fiber.Ctx, code string, state s
 	var googleUser messages2.GoogleOauthUserInfo
 	_ = json.Unmarshal(userInfo, &googleUser)
 
-	// 이메일, 고유 ID 기반 유저 체크
+	// 이메일, 고유 RoutineId 기반 유저 체크
 	userInfo2, err := srv.userService.GetUserByOauthInfo(domains.GOOGLE, googleUser.Sub)
 	if err != nil {
 		jwtToken, err := srv.jwtProvider.GenerateTemporaryJwt(domains.GOOGLE, googleUser.Sub, googleUser.Email)
@@ -211,7 +212,7 @@ func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state st
 	var naverUser messages2.NaverOauthUserInfo
 	_ = json.Unmarshal(userInfo, &naverUser)
 
-	// 이메일, 고유 ID 기반 유저 체크
+	// 이메일, 고유 RoutineId 기반 유저 체크
 	userInfo2, err := srv.userService.GetUserByOauthInfo(domains.NAVER, naverUser.Response.ID)
 	if err != nil {
 		jwtToken, err := srv.jwtProvider.GenerateTemporaryJwt(domains.NAVER, naverUser.Response.ID, naverUser.Response.Email)
@@ -255,7 +256,7 @@ func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state st
 //	}
 //	// JWT 생성
 //	jwtToken, err := srv.jwtProvider.GenerateOauthJwt(domains.GOOGLE, *newUser.OauthSub, *newUser.OauthEmail, newUser.Nickname)
-//	srv.saveRefreshToken(jwtToken.RefreshToken, newUser.ID)
+//	srv.saveRefreshToken(jwtToken.RefreshToken, newUser.RoutineId)
 //	if err != nil {
 //		return nil, fiber.NewError(fiber.StatusUnauthorized, err.Error())
 //	}
@@ -301,8 +302,8 @@ func (srv *OAuth2Service) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenReq
 	return jwtToken, nil
 }
 
-func (srv *OAuth2Service) saveRefreshToken(refreshToken string, userId uint) {
-	srv.database.REDIS().Set(context.Background(), "refreshtoken:"+refreshToken, utils.UintToString(uint64(userId)), time.Hour*time.Duration(srv.config.Auth.JWT.RefreshTokenExpiresHours))
+func (srv *OAuth2Service) saveRefreshToken(refreshToken string, userId uuid.UUID) {
+	srv.database.REDIS().Set(context.Background(), "refreshtoken:"+refreshToken, userId, time.Hour*time.Duration(srv.config.Auth.JWT.RefreshTokenExpiresHours))
 }
 
 func (srv *OAuth2Service) getRefreshToken(refreshToken string) (string, error) {
