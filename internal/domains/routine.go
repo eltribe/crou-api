@@ -32,41 +32,55 @@ const (
 	EVENING   TimeOfDay = "EVENING"
 )
 
-// 루틴 템플릿 (N개) -기록시-> 루틴 기록 (N개)
 type RoutineTemplate struct {
+	Category    RoutineCategory `json:"category" validate:"required,oneof=SIGNATURE FAITH DAILY"`
+	RoutineType RoutineType     `json:"routineType" validate:"required,oneof=BIBLE_TALK CHECK WRITE"`
+	Title       string          `json:"title" validate:"required"`
+	When        string          `json:"when" validate:"required"`
+	TimeOfDay   TimeOfDay       `json:"timeOfDay" validate:"required,oneof=MORNING AFTERNOON EVENING"`
+}
+
+// 루틴 템플릿(N) -> 루틴세트(M) -> 루틴 기록(1)
+type Routine struct {
 	common.UUIDModel
-	UserId      uuid.UUID `gorm:"index"`
-	Category    RoutineCategory
-	RoutineType RoutineType
-	Title       string
-	When        string    // 언제 할지?
-	TimeOfDay   TimeOfDay // 오전,오후,저녁
+	UserId uuid.UUID `gorm:"index"`
+	RoutineTemplate
 
 	// 반복 주기 및 알림 설정
-	DaysOfWeek       pq.StringArray `gorm:"type:text[]"` // 월,화,수,목,금,토,일
+	DaysOfWeek       pq.Int32Array `gorm:"type:integer[]"`
 	IsNotification   bool
 	NotificationTime *int32
+}
 
-	RoutineRecord *RoutineRecord
+func (rt Routine) GetDaysOfWeek() []time.Weekday {
+	daysOfWeek := make([]time.Weekday, 0)
+	for _, day := range rt.DaysOfWeek {
+		daysOfWeek = append(daysOfWeek, time.Weekday(day))
+	}
+	return daysOfWeek
+}
+
+type RoutineSet struct {
+	common.UUIDModel
+	UserId uuid.UUID
+	RoutineTemplate
+
+	Year  int `gorm:"index:record_date"`
+	Month int `gorm:"index:record_date"`
+	Day   int `gorm:"index:record_date"`
+
+	RoutineId uuid.UUID
+	Routine   Routine `gorm:"foreignKey:RoutineId;references:ID"`
 }
 
 // 루틴 기록
 type RoutineRecord struct {
-	common.UUIDModel
-	UserId      uuid.UUID `gorm:"index"`
-	Category    RoutineCategory
-	RoutineType RoutineType
-	Title       string
-	When        string    // 언제 할지?
-	TimeOfDay   TimeOfDay // 오전,오후,저녁
+	RoutineSetId uuid.UUID `gorm:"type:uuid;primaryKey;"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 
-	IsRecord        bool    // 기록했는지?
-	RecordContent   *string `gorm:"type:text"`
-	Year            int
-	Month           int
-	Day             int
-	RecordDayOfWeek *time.Weekday
+	IsRecord      bool    // 기록했는지?
+	RecordContent *string `gorm:"type:text"`
 
-	RoutineTemplateId string
-	RoutineTemplate   RoutineTemplate `gorm:"foreignKey:RoutineTemplateId;references:ID"`
+	RoutineSet RoutineSet `gorm:"foreignKey:RoutineSetId;references:ID"`
 }

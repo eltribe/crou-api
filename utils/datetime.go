@@ -12,3 +12,7 @@ func TimeToStringDateTime(t time.Time) string {
 func TimeToStringDate(t time.Time) string {
 	return t.Format(formatYYYYMMDD)
 }
+
+func GetDayOfWeek(y, m, d int) time.Weekday {
+	return time.Date(y, time.Month(m), d, 0, 0, 0, 0, time.Local).Weekday()
+}

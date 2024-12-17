@@ -109,7 +109,8 @@ func NewDatabase(conf *config.Config) Persistent {
 var Alldomains = []interface{}{
 	&domains.User{},
 	&domains.UserDetail{},
-	&domains.RoutineTemplate{},
+	&domains.Routine{},
+	&domains.RoutineSet{},
 	&domains.RoutineRecord{},
 }
 

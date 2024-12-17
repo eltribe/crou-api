@@ -118,4 +118,13 @@ func Route(
 		err := stx.RoutineInputPort.DeleteRoutine(c, uuid.MustParse(routineId))
 		return response(c, nil, err)
 	})
+
+	auth.Post("/routine/record", func(c *fiber.Ctx) error {
+		req := messages.WriteRoutineRecordRequest{}
+		if err := bodyValidator(c, &req); err != nil {
+			return err
+		}
+		result, err := stx.RoutineInputPort.WriteRoutineRecord(c, req)
+		return response(c, result, err)
+	})
 }
