@@ -12,8 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type DaysOfWeek []int32
-
 type RoutineUseCase struct {
 	jwtProvider       *utils.JwtProvider
 	routineOutputPort outputport.RoutineDataOutputPort
@@ -23,9 +21,18 @@ func NewRoutineUseCase(cnf *config.Config, routineDataOutputPort outputport.Rout
 	return &RoutineUseCase{routineOutputPort: routineDataOutputPort, jwtProvider: utils.NewJwtProvider(cnf)}
 }
 
-func (svc RoutineUseCase) GetRoutines(c *fiber.Ctx) ([]*messages.RoutineResponse, error) {
-	claims := svc.jwtProvider.GetClaims(c)
-	routines, err := svc.routineOutputPort.ListRoutinesByUserId(uuid.MustParse(claims.Sub))
+// GetRoutines godoc
+//
+// @Summary		Get Routines API
+// @Description	Get routines by user ID.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Success		200	{object}	[]messages.RoutineResponse
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines [get]
+func (svc RoutineUseCase) GetRoutines(c *fiber.Ctx, userId uuid.UUID) ([]*messages.RoutineResponse, error) {
+	routines, err := svc.routineOutputPort.ListRoutinesByUserId(userId)
 	if err != nil {
 		return nil, errorcode.ErrRoutineNotFound
 	}
@@ -37,10 +44,20 @@ func (svc RoutineUseCase) GetRoutines(c *fiber.Ctx) ([]*messages.RoutineResponse
 	return routineResponses, nil
 }
 
+// CreateRoutine godoc
+//
+// @Summary		Create Routine API
+// @Description	Create a new routine.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Param		messages.CreateRoutineRequest	body	messages.CreateRoutineRequest	true	"Create Routine Request"
+// @Success		200	{object}	messages.RoutineResponse
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines [post]
 func (svc RoutineUseCase) CreateRoutine(c *fiber.Ctx, req messages.CreateRoutineRequest) (*messages.RoutineResponse, error) {
-	claims := svc.jwtProvider.GetClaims(c)
 	newRoutine := &domains.Routine{
-		UserId: uuid.MustParse(claims.Sub),
+		UserId: req.UserId,
 		RoutineTemplate: domains.RoutineTemplate{
 			Category:    req.Category,
 			RoutineType: req.RoutineType,
@@ -61,10 +78,21 @@ func (svc RoutineUseCase) CreateRoutine(c *fiber.Ctx, req messages.CreateRoutine
 	return messages.ConvertToRoutineDTO(routine), nil
 }
 
+// UpdateRoutine godoc
+//
+// @Summary		Update Routine API
+// @Description	Update an existing routine.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Param		id	path	string	true	"Routine ID"
+// @Param		messages.UpdateRoutineRequest	body	messages.UpdateRoutineRequest	true	"Update Routine Request"
+// @Success		200	{object}	messages.RoutineResponse
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines/{id} [put]
 func (svc RoutineUseCase) UpdateRoutine(c *fiber.Ctx, req messages.UpdateRoutineRequest) (*messages.RoutineResponse, error) {
-	claims := svc.jwtProvider.GetClaims(c)
 	updatedRoutine := &domains.Routine{
-		UserId: uuid.MustParse(claims.Sub),
+		UserId: req.UserId,
 		RoutineTemplate: domains.RoutineTemplate{
 			Category:    req.Category,
 			RoutineType: req.RoutineType,
@@ -85,6 +113,17 @@ func (svc RoutineUseCase) UpdateRoutine(c *fiber.Ctx, req messages.UpdateRoutine
 	return messages.ConvertToRoutineDTO(routine), nil
 }
 
+// DeleteRoutine godoc
+//
+// @Summary		Delete Routine API
+// @Description	Delete a routine by ID.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Param		id	path	string	true	"Routine ID"
+// @Success		204
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines/{id} [delete]
 func (svc RoutineUseCase) DeleteRoutine(c *fiber.Ctx, routineId uuid.UUID) error {
 	err := svc.routineOutputPort.DeleteRoutine(routineId)
 	if err != nil {
@@ -93,9 +132,19 @@ func (svc RoutineUseCase) DeleteRoutine(c *fiber.Ctx, routineId uuid.UUID) error
 	return nil
 }
 
+// WriteRoutineRecord godoc
+//
+// @Summary		Write Routine Record API
+// @Description	Write a record for a routine.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Param		id	path	string	true	"Routine ID"
+// @Param		messages.WriteRoutineRecordRequest	body	messages.WriteRoutineRecordRequest	true	"Write Routine Record Request"
+// @Success		200	{object}	messages.RoutineRecordResponse
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines/{id}/record [post]
 func (svc RoutineUseCase) WriteRoutineRecord(c *fiber.Ctx, req messages.WriteRoutineRecordRequest) (*messages.RoutineRecordResponse, error) {
-	claims := svc.jwtProvider.GetClaims(c)
-	userId := uuid.MustParse(claims.Sub)
 	routine, err := svc.routineOutputPort.GetRoutineById(req.RoutineId)
 	if err != nil {
 		return nil, errorcode.ErrRoutineNotFound
@@ -107,9 +156,9 @@ func (svc RoutineUseCase) WriteRoutineRecord(c *fiber.Ctx, req messages.WriteRou
 	}
 
 	// 루틴 세트 조회
-	routineSet, err := svc.routineOutputPort.GetRoutineSetByRoutineIdAndDate(userId, routine.ID, req.Year, req.Month, req.Day)
+	routineSet, err := svc.routineOutputPort.GetRoutineSetByRoutineIdAndDate(req.UserId, routine.ID, req.Year, req.Month, req.Day)
 	if err != nil { // 루틴 세트가 없으면 루틴 세트를 생성
-		routines, err := svc.routineOutputPort.ListRoutinesByUserId(uuid.MustParse(claims.Sub))
+		routines, err := svc.routineOutputPort.ListRoutinesByUserId(req.UserId)
 		if err != nil {
 			return nil, errorcode.ErrRoutineNotFound
 		}
@@ -142,13 +191,27 @@ func (svc RoutineUseCase) WriteRoutineRecord(c *fiber.Ctx, req messages.WriteRou
 	return messages.ConvertToRoutineRecordDTO(routineRecord), nil
 }
 
-func (svc RoutineUseCase) DeleteRoutineRecord(c *fiber.Ctx, req messages.RollbackRoutineRecordRequest) (*messages.RoutineRecordResponse, error) {
-	claims := svc.jwtProvider.GetClaims(c)
-	_, err := svc.routineOutputPort.GetRoutineById(uuid.MustParse(claims.Sub))
+// DeleteRoutineRecord godoc
+//
+// @Summary		Delete Routine Record API
+// @Description	Delete a routine record by ID.
+// @Accept		json
+// @Produce		json
+// @Tags 		데일리 루틴
+// @Param		id	path	string	true	"Routine Record ID"
+// @Param		messages.DeleteRoutineRecordRequest	body	messages.DeleteRoutineRecordRequest	true	"Delete Routine Record Request"
+// @Success		200
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/routines/record/{id} [delete]
+func (svc RoutineUseCase) DeleteRoutineRecord(c *fiber.Ctx, req messages.DeleteRoutineRecordRequest) error {
+	record, err := svc.routineOutputPort.GetRoutineRecordById(req.RoutineRecordId)
 	if err != nil {
-		return nil, errorcode.ErrRoutineNotFound
+		return errorcode.ErrRoutineNotFound
 	}
 
-	//svc.routineOutputPort.DeleteRoutineRecord(req.RoutineId, req.Year, req.Month, req.Day)
-	return nil, nil
+	if record.RoutineSet.UserId != req.UserId {
+		return errorcode.ErrRoutineRecordNotFound
+	}
+
+	return svc.routineOutputPort.DeleteRoutineRecord(req.RoutineRecordId)
 }

@@ -23,15 +23,17 @@ func NewAuthUseCase(cnf *config.Config, userDataOutputPort outputport.UserDataOu
 	}
 }
 
+// LoginUser godoc
+//
 // @Summary		로그인 API
 // @Description	이메일과 비밀번호를 사용하여 로그인합니다.
-// @Tags			인증
-// @Accept			json
+// @Accept		json
 // @Produce		json
+// @Tag 		인증
+// @Param		messages.LoginRequest	body	messages.LoginRequest	true	"Login Request"
 // @Success		200	{object}	messages.LoginResponse
-// @Failure		401	{object}	server.Error
-// @Failure		409	{object}	server.Error
-// @Router			/v1/auth/login [post]
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/auth/login [post]
 func (svc *AuthUseCase) LoginUser(c *fiber.Ctx, req *messages.LoginRequest) (*messages.LoginResponse, error) {
 	user, err := svc.userDataOutputPort.GetUserByEmail(req.Email)
 	if err != nil {
@@ -52,6 +54,17 @@ func (svc *AuthUseCase) LoginUser(c *fiber.Ctx, req *messages.LoginRequest) (*me
 	}, nil
 }
 
+// RegisterUser godoc
+//
+// @Summary		회원가입 API
+// @Description	이메일, 비밀번호, 닉네임, 성별, 생년월일을 사용하여 회원가입합니다.
+// @Accept		json
+// @Produce		json
+// @Tag 		인증
+// @Param		messages.RegisterUserRequest	body	messages.RegisterUserRequest	true	"Register User Request"
+// @Success		200	{object}	messages.RegisterUserResponse
+// @Failure		409	{object}	errorcode.UseCaseError
+// @Router		/v1/auth/join [post]
 func (svc *AuthUseCase) RegisterUser(c *fiber.Ctx, req *messages.RegisterUserRequest) (*messages.RegisterUserResponse, error) {
 	_, err := svc.userDataOutputPort.GetUserByEmail(req.Email)
 	if err == nil {

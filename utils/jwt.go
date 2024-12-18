@@ -6,15 +6,25 @@ import (
 	"crou-api/messages"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
+	"sync"
 	"time"
 )
 
+// singleton
 type JwtProvider struct {
 	config *config.JWTConfig
 }
 
+var (
+	instance *JwtProvider
+	once     sync.Once
+)
+
 func NewJwtProvider(config *config.Config) *JwtProvider {
-	return &JwtProvider{config: &config.Auth.JWT}
+	once.Do(func() {
+		instance = &JwtProvider{config: &config.Auth.JWT}
+	})
+	return instance
 }
 
 func GetAccessUser(svc *JwtProvider, c *fiber.Ctx) *messages.JwtClaims {

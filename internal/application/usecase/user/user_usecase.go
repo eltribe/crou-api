@@ -27,8 +27,6 @@ func NewUserUseCase(database database.Persistent) *UserUseCase {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	messages.User
-//	@Failure		401	{object}	server.Error
-//	@Failure		409	{object}	server.Error
 //	@Router			/v1/user/profile [get]
 func (svc *UserUseCase) GetUser(c *fiber.Ctx) (*messages.User, error) {
 	claims := svc.jwtProvider.GetClaims(c)

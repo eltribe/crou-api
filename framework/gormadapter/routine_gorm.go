@@ -96,7 +96,23 @@ func (r RoutineGorm) GetRoutineSetByRoutineIdAndDate(userId uuid.UUID, routineId
 func (r RoutineGorm) GetRoutineRecordBySetId(setId uuid.UUID) (*domains.RoutineRecord, error) {
 	sql := r.database.DB()
 	var routineRecord domains.RoutineRecord
-	result := sql.Model(&domains.RoutineRecord{}).Where("routine_set_id = ?", setId).First(&routineRecord)
+	result := sql.Model(&domains.RoutineRecord{}).
+		InnerJoins("routine_sets", "routine_records.routine_set_id = routine_sets.id").
+		Where("routine_set_id = ?", setId).
+		First(&routineRecord)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &routineRecord, nil
+}
+
+func (r RoutineGorm) GetRoutineRecordById(id uuid.UUID) (*domains.RoutineRecord, error) {
+	sql := r.database.DB()
+	var routineRecord domains.RoutineRecord
+	result := sql.Model(&domains.RoutineRecord{}).
+		InnerJoins("routine_sets", "routine_records.routine_set_id = routine_sets.id").
+		Where("id = ?", id).
+		First(&routineRecord)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -112,9 +128,9 @@ func (r RoutineGorm) WriteRoutineRecord(newRoutineRecord *domains.RoutineRecord)
 	return newRoutineRecord, nil
 }
 
-func (r RoutineGorm) DeleteRoutineRecord(routine *domains.RoutineRecord) error {
+func (r RoutineGorm) DeleteRoutineRecord(recordId uuid.UUID) error {
 	sql := r.database.DB()
-	result := sql.Delete(routine)
+	result := sql.Delete(&domains.RoutineRecord{}, "id = ?", recordId)
 	if result.Error != nil {
 		return result.Error
 	}

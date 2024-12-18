@@ -2,11 +2,13 @@ package router
 
 import (
 	"crou-api/errorcode"
+	"crou-api/utils"
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
+	"github.com/google/uuid"
 )
 
 // 생성한 구조체에 대해 Validate 함수 생성
@@ -54,6 +56,12 @@ func response(c *fiber.Ctx, response interface{}, err error) error {
 		return err
 	}
 	return c.JSON(response)
+}
+
+func getUserId(c *fiber.Ctx, jwtProvider *utils.JwtProvider) uuid.UUID {
+	claims := jwtProvider.GetClaims(c)
+	userId := uuid.MustParse(claims.Sub)
+	return userId
 }
 
 func responseRedirect(c *fiber.Ctx, url string, response interface{}, err error) error {

@@ -39,6 +39,7 @@ func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *
 	}
 }
 
+/*
 // OauthGoogleLogin godoc
 //
 //	@Summary		Oauth2.0 Google 인증 API
@@ -50,6 +51,7 @@ func NewOAuth2Service(database database.Persistent, auth *config.OAuth, config *
 //	@Success		200							{object}	messages.OauthLoginUrl
 //	@Failure		409							{object}	server.Error
 //	@Router			/v1/auth/google [get]
+*/
 func (srv *OAuth2Service) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
 	state := utils.RandToken(5)
 	//sess, err := store.Get(c)
@@ -70,6 +72,7 @@ func (srv *OAuth2Service) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLog
 	}, nil
 }
 
+/*
 // OauthNaverLogin godoc
 //
 //	@Summary		Oauth2.0 Naver 인증 API
@@ -81,6 +84,7 @@ func (srv *OAuth2Service) OauthGoogleLogin(c *fiber.Ctx, req *messages2.OauthLog
 //	@Success		200							{object}	messages.OauthLoginUrl
 //	@Failure		409							{object}	server.Error
 //	@Router			/v1/auth/naver [get]
+*/
 func (srv *OAuth2Service) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLoginRequest) (*messages2.OauthLoginUrl, error) {
 	state := utils.RandToken(5)
 	//sess, err := store.Get(c)
@@ -101,6 +105,7 @@ func (srv *OAuth2Service) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLogi
 	}, nil
 }
 
+/*
 // OauthGoogleCallback godoc
 //
 //	@Summary		Oauth2.0 Google 인증 완료 처리 API
@@ -113,6 +118,7 @@ func (srv *OAuth2Service) OauthNaverLogin(c *fiber.Ctx, req *messages2.OauthLogi
 //	@Success		200		{object}	messages.AccessToken
 //	@Failure		409		{object}	server.Error
 //	@Router			/v1/auth/google/callback [get]
+*/
 func (srv *OAuth2Service) OauthGoogleCallback(c *fiber.Ctx, code string, state string) (*messages2.AccessToken, error) {
 
 	//sess, _ := store.Get(c)
@@ -165,7 +171,8 @@ func (srv *OAuth2Service) OauthGoogleCallback(c *fiber.Ctx, code string, state s
 	return jwtToken, nil
 }
 
-// OauthNaverCallback godoc
+/*
+//OauthNaverCallback godoc
 //
 //	@Summary		Oauth2.0 Naver 인증 완료 처리 API
 //	@Description	Oauth2.0 Naver 인증 완료 처리 후 accessToken을 발급합니다.
@@ -177,6 +184,7 @@ func (srv *OAuth2Service) OauthGoogleCallback(c *fiber.Ctx, code string, state s
 //	@Success		200		{object}	messages.AccessToken
 //	@Failure		409		{object}	server.Error
 //	@Router			/v1/auth/naver/callback [get]
+*/
 func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state string) (*messages2.AccessToken, error) {
 
 	//sess, _ := store.Get(c)
@@ -263,6 +271,7 @@ func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state st
 //	return jwtToken, nil
 //}
 
+/*
 // Refresh godoc
 //
 //	@Summary		리프레쉬 토큰 요청  API
@@ -275,6 +284,7 @@ func (srv *OAuth2Service) OauthNaverCallback(c *fiber.Ctx, code string, state st
 //	@Failure		401						{object}	server.Error
 //	@Failure		409						{object}	server.Error
 //	@Router			/v1/auth/refresh [post]
+*/
 func (srv *OAuth2Service) Refresh(c *fiber.Ctx, input *messages2.RefreshTokenRequest) (*messages2.AccessToken, error) {
 
 	if err := utils.VerifyPassword(input.RefreshToken, srv.config.Auth.JWT.Secret); err != nil {
