@@ -1,0 +1,523 @@
+basePath: /
+definitions:
+  crou-api_internal_domains.OauthType:
+    enum:
+    - GOOGLE
+    - NAVER
+    type: string
+    x-enum-varnames:
+    - GOOGLE
+    - NAVER
+  crou-api_internal_domains.RoutineCategory:
+    enum:
+    - SIGNATURE
+    - FAITH
+    - DAILY
+    type: string
+    x-enum-varnames:
+    - SIGNATURE
+    - FAITH
+    - DAILY
+  crou-api_internal_domains.RoutineType:
+    enum:
+    - BIBLE_TALK
+    - CHECK
+    - WRITE
+    type: string
+    x-enum-varnames:
+    - BIBLE_TALK
+    - CHECK
+    - WRITE
+  crou-api_internal_domains.TimeOfDay:
+    enum:
+    - MORNING
+    - AFTERNOON
+    - EVENING
+    type: string
+    x-enum-varnames:
+    - MORNING
+    - AFTERNOON
+    - EVENING
+  errorcode.UseCaseError:
+    properties:
+      code:
+        type: integer
+      errorCode:
+        type: integer
+      message:
+        type: string
+    type: object
+  messages.CreateRoutineRequest:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.RoutineCategory'
+        enum:
+        - SIGNATURE
+        - FAITH
+        - DAILY
+      daysOfWeek:
+        items:
+          type: integer
+        type: array
+      isNotification:
+        type: boolean
+      notificationTime:
+        type: integer
+      routineType:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.RoutineType'
+        enum:
+        - BIBLE_TALK
+        - CHECK
+        - WRITE
+      timeOfDay:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.TimeOfDay'
+        enum:
+        - MORNING
+        - AFTERNOON
+        - EVENING
+      title:
+        type: string
+      when:
+        type: string
+    required:
+    - category
+    - daysOfWeek
+    - routineType
+    - timeOfDay
+    - title
+    - when
+    type: object
+  messages.DeleteRoutineRecordRequest:
+    properties:
+      routineRecordId:
+        type: string
+      userId:
+        type: string
+    required:
+    - routineRecordId
+    type: object
+  messages.LoginRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  messages.LoginResponse:
+    properties:
+      expiresIn:
+        type: integer
+      refreshToken:
+        type: string
+      refreshTokenExpiresIn:
+        type: integer
+      token:
+        type: string
+    type: object
+  messages.RegisterUserRequest:
+    properties:
+      birth:
+        maximum: 21000101
+        minimum: 19000101
+        type: integer
+      email:
+        maxLength: 100
+        type: string
+      gender:
+        enum:
+        - M
+        - F
+        type: string
+      nickname:
+        maxLength: 20
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+    required:
+    - birth
+    - email
+    - gender
+    - nickname
+    - password
+    type: object
+  messages.RegisterUserResponse:
+    properties:
+      birth:
+        type: integer
+      email:
+        type: string
+      gender:
+        type: string
+      nickname:
+        type: string
+      userId:
+        type: string
+    type: object
+  messages.RoutineRecordResponse:
+    properties:
+      isRecord:
+        type: boolean
+      recordContent:
+        type: string
+    type: object
+  messages.RoutineResponse:
+    properties:
+      category:
+        $ref: '#/definitions/crou-api_internal_domains.RoutineCategory'
+      daysOfWeek:
+        items:
+          $ref: '#/definitions/time.Weekday'
+        type: array
+      id:
+        type: string
+      isNotification:
+        type: boolean
+      notificationTime:
+        type: integer
+      routineType:
+        $ref: '#/definitions/crou-api_internal_domains.RoutineType'
+      timeOfDay:
+        $ref: '#/definitions/crou-api_internal_domains.TimeOfDay'
+      title:
+        type: string
+      when:
+        type: string
+    type: object
+  messages.UpdateRoutineRequest:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.RoutineCategory'
+        enum:
+        - SIGNATURE
+        - FAITH
+        - DAILY
+      daysOfWeek:
+        items:
+          type: integer
+        type: array
+      isNotification:
+        type: boolean
+      notificationTime:
+        type: integer
+      routineType:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.RoutineType'
+        enum:
+        - BIBLE_TALK
+        - CHECK
+        - WRITE
+      timeOfDay:
+        allOf:
+        - $ref: '#/definitions/crou-api_internal_domains.TimeOfDay'
+        enum:
+        - MORNING
+        - AFTERNOON
+        - EVENING
+      title:
+        type: string
+      when:
+        type: string
+    required:
+    - category
+    - daysOfWeek
+    - routineType
+    - timeOfDay
+    - title
+    - when
+    type: object
+  messages.User:
+    properties:
+      nickname:
+        type: string
+      notificationCount:
+        type: integer
+      oauthEmail:
+        type: string
+      oauthSub:
+        type: string
+      oauthType:
+        $ref: '#/definitions/crou-api_internal_domains.OauthType'
+      taste:
+        type: string
+      userID:
+        type: string
+    type: object
+  messages.WriteRoutineRecordRequest:
+    properties:
+      day:
+        type: integer
+      month:
+        type: integer
+      recordContent:
+        type: string
+      routineId:
+        type: string
+      userId:
+        type: string
+      year:
+        type: integer
+    type: object
+  time.Weekday:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    type: integer
+    x-enum-varnames:
+    - Sunday
+    - Monday
+    - Tuesday
+    - Wednesday
+    - Thursday
+    - Friday
+    - Saturday
+info:
+  contact: {}
+  title: CROU API documentation
+  version: 1.0.0
+paths:
+  /v1/auth/join:
+    post:
+      consumes:
+      - application/json
+      description: 이메일, 비밀번호, 닉네임, 성별, 생년월일을 사용하여 회원가입합니다.
+      parameters:
+      - description: Register User Request
+        in: body
+        name: messages.RegisterUserRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.RegisterUserResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: 회원가입 API
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 이메일과 비밀번호를 사용하여 로그인합니다.
+      parameters:
+      - description: Login Request
+        in: body
+        name: messages.LoginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.LoginResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: 로그인 API
+  /v1/routines:
+    get:
+      consumes:
+      - application/json
+      description: Get routines by user ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/messages.RoutineResponse'
+            type: array
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Get Routines API
+      tags:
+      - 데일리 루틴
+    post:
+      consumes:
+      - application/json
+      description: Create a new routine.
+      parameters:
+      - description: Create Routine Request
+        in: body
+        name: messages.CreateRoutineRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.CreateRoutineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.RoutineResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Create Routine API
+      tags:
+      - 데일리 루틴
+  /v1/routines/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a routine by ID.
+      parameters:
+      - description: Routine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Delete Routine API
+      tags:
+      - 데일리 루틴
+    put:
+      consumes:
+      - application/json
+      description: Update an existing routine.
+      parameters:
+      - description: Routine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Routine Request
+        in: body
+        name: messages.UpdateRoutineRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.UpdateRoutineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.RoutineResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Update Routine API
+      tags:
+      - 데일리 루틴
+  /v1/routines/{id}/record:
+    post:
+      consumes:
+      - application/json
+      description: Write a record for a routine.
+      parameters:
+      - description: Routine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Write Routine Record Request
+        in: body
+        name: messages.WriteRoutineRecordRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.WriteRoutineRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.RoutineRecordResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Write Routine Record API
+      tags:
+      - 데일리 루틴
+  /v1/routines/record/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a routine record by ID.
+      parameters:
+      - description: Routine Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Delete Routine Record Request
+        in: body
+        name: messages.DeleteRoutineRecordRequest
+        required: true
+        schema:
+          $ref: '#/definitions/messages.DeleteRoutineRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errorcode.UseCaseError'
+      summary: Delete Routine Record API
+      tags:
+      - 데일리 루틴
+  /v1/user/profile:
+    get:
+      consumes:
+      - application/json
+      description: JWT 기반 유저정보를 조회합니다.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.User'
+      summary: 유저 정보 조회  API
+      tags:
+      - 유저정보
+swagger: "2.0"
